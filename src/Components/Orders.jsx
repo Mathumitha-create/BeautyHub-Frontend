@@ -1,30 +1,38 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { API_BASE } from "../api";
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch("http://localhost:3000/orders", {
-          credentials: "include",
-        });
+        const token = sessionStorage.getItem("token");
+        const headers = token ? { Authorization: token } : {};
+        const res = await fetch(`${API_BASE}/orders`, { headers });
         if (!res.ok) throw new Error("Failed to load orders");
         const data = await res.json();
         // data is array of orders from API
         setOrders(
           (Array.isArray(data) ? data : []).map((o) => ({
-            id: o.id,
-            date: new Date(o.date).toLocaleDateString(),
+            id: o.id || o._id,
+            date: o.date ? new Date(o.date).toLocaleDateString() : "",
+            user: o.user?.email || o.userEmail || o.userName,
             status: o.status || "Processing",
-            total: o.total,
-            items: o.items || [],
+            total: o.total ?? o.amount ?? 0,
+            items: Array.isArray(o.items) ? o.items : [],
           }))
         );
+        setError("");
       } catch (e) {
-        console.log(e.message || "Failed to load orders");
+        const msg = e?.message || "Failed to load orders";
+        console.log(msg);
+        setError(msg);
       }
+      setLoading(false);
     };
     load();
   }, []);
@@ -46,8 +54,17 @@ const Orders = () => {
     <div className="w-full px-6 py-12">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl font-bold text-center mb-10 text-gray-800">
-          My Orders
+          {sessionStorage.getItem("role") === "admin"
+            ? "All Orders"
+            : "My Orders"}
         </h1>
+
+        {loading && (
+          <p className="text-center text-gray-500">Loading orders…</p>
+        )}
+        {!loading && error && (
+          <p className="text-center text-red-600">{error}</p>
+        )}
 
         {orders.length > 0 ? (
           <div className="space-y-6">
@@ -72,6 +89,14 @@ const Orders = () => {
                   </div>
 
                   <div className="text-right">
+                    {order.user && (
+                      <p className="text-sm text-gray-500">Customer</p>
+                    )}
+                    {order.user && (
+                      <p className="text-lg font-bold text-gray-800">
+                        {order.user}
+                      </p>
+                    )}
                     <span
                       className={`inline-block px-3 py-1 rounded-full text-sm font-semibold mt-1 ${getStatusColor(
                         order.status

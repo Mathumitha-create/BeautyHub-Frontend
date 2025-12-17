@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { toast } from "react-hot-toast";
 import Card from "./Card";
+import { API_BASE } from "../api";
 
 // Presentational component: expects a `products` prop (array)
 const Products = ({ products = [] }) => {
@@ -9,12 +11,18 @@ const Products = ({ products = [] }) => {
 
   const handleAddToCart = async (product) => {
     try {
-      const res = await fetch("http://localhost:3000/cart", {
+      const token = sessionStorage.getItem("token");
+      if (!token) {
+        toast.error("Please login to add items to cart.");
+        navigate("/login");
+        return;
+      }
+      const res = await fetch(`${API_BASE}/cart`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: token,
         },
-        credentials: "include",
         body: JSON.stringify({
           productId: product._id || product.id,
           quantity: 1,
@@ -22,7 +30,7 @@ const Products = ({ products = [] }) => {
       });
 
       if (res.status === 401) {
-        alert("Your session has expired. Please log in again.");
+        toast.error("Your session has expired. Please log in again.");
         navigate("/login");
         return;
       }
@@ -33,10 +41,11 @@ const Products = ({ products = [] }) => {
       }
 
       await res.json();
+      toast.success("Added to cart");
       navigate("/cart");
     } catch (err) {
       console.error(err);
-      alert(err.message || "Failed to add to cart");
+      toast.error(err.message || "Failed to add to cart");
     }
   };
   const categories = ["All", "Skincare", "Makeup"];

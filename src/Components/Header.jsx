@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router";
 import home from "../assets/home.jpg.png";
 
-const Header = ({ onLogout, isLoggedIn, showBanner = false }) => {
+const Header = ({ onLogout, isLoggedIn, role = null, showBanner = false }) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -38,7 +38,7 @@ const Header = ({ onLogout, isLoggedIn, showBanner = false }) => {
           >
             Cart
           </Link>
-          {isLoggedIn && (
+          {isLoggedIn && role === "admin" && (
             <Link
               to="/admin"
               className="text-lg font-medium hover:text-pink-600 transition"

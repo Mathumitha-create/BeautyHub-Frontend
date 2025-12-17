@@ -1,13 +1,20 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { toast } from "react-hot-toast";
+import { API_BASE } from "../api";
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
+    const token = sessionStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
     // Load cart: expect { items: [{ product: { _id, Name, SellingPrice, image }, quantity }] }
-    fetch("http://localhost:3000/cart", { credentials: "include" })
+    fetch(`${API_BASE}/cart`, { headers: { Authorization: token } })
       .then(async (res) => {
         if (res.status === 401) {
           navigate("/login");
@@ -28,18 +35,20 @@ const Cart = () => {
         }));
         setCartItems(normalized);
       })
-      .catch((e) => console.log(e.message || "Failed to load cart"));
+      .catch((e) => toast.error(e.message || "Failed to load cart"));
   }, [navigate]);
 
   const removeItem = (id) => {
-    fetch(`http://localhost:3000/cart/${id}`, {
+    const token = sessionStorage.getItem("token");
+    fetch(`${API_BASE}/cart/${id}`, {
       method: "DELETE",
-      credentials: "include",
+      headers: { Authorization: token },
     })
       .then(() => {
         setCartItems((prev) => prev.filter((item) => item.id !== id));
+        toast.success("Item removed from cart");
       })
-      .catch(() => console.log("Failed to remove item"));
+      .catch(() => toast.error("Failed to remove item"));
   };
 
   const updateQty = (id, newQty) => {
@@ -60,10 +69,14 @@ const Cart = () => {
 
   const handleCheckout = async () => {
     try {
-      const res = await fetch("http://localhost:3000/orders", {
+      const token = sessionStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+      const res = await fetch(`${API_BASE}/orders`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers: { "Content-Type": "application/json", Authorization: token },
       });
       if (!res.ok) {
         const msg = await res.text().catch(() => "Checkout failed");
@@ -72,9 +85,10 @@ const Cart = () => {
       await res.json();
       // clear cart in UI and go to orders page
       setCartItems([]);
+      toast.success("Order placed successfully");
       navigate("/orders");
     } catch (e) {
-      alert(e.message || "Failed to place order");
+      toast.error(e.message || "Failed to place order");
     }
   };
 

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API_BASE } from "../api";
 
 const ProductForm = () => {
   const [formData, setFormData] = useState({
@@ -16,7 +17,7 @@ const ProductForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:3000/products", {
+      const res = await fetch(`${API_BASE}/products`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

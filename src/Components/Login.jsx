@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { toast } from "react-hot-toast";
+import { API_BASE } from "../api";
 
 const Login = ({ onLogin }) => {
   const [email, setEmail] = useState("");
@@ -8,18 +10,31 @@ const Login = ({ onLogin }) => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-
-   
-
-    onLogin(role);
-    sessionStorage.setItem("email", email);
-
-    if (role === "admin") {
-      navigate("/admin");
-    } else {
-      navigate("/");
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || "Login failed");
+      }
+      const token = data.token;
+      const apiRole = data.role || role;
+      sessionStorage.setItem("token", token);
+      sessionStorage.setItem("email", email);
+      sessionStorage.setItem("isLoggedIn", "true");
+      sessionStorage.setItem("role", apiRole);
+      onLogin(apiRole);
+      toast.success("Login successful");
+      navigate(apiRole === "admin" ? "/admin" : "/");
+    } catch (err) {
+      setError(err.message || "Login failed");
+      toast.error(err.message || "Login failed");
     }
   };
 
@@ -84,8 +99,6 @@ const Login = ({ onLogin }) => {
             Login
           </button>
         </form>
-
-       
       </div>
     </div>
   );

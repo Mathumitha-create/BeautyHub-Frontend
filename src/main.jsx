@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+import { Toaster, toast } from "react-hot-toast";
 import { useState } from "react";
 import {
   BrowserRouter,
@@ -19,8 +20,10 @@ import Admin from "./Components/Admin";
 import Footer from "./Components/Footer";
 
 const AppRouter = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [role, setRole] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    sessionStorage.getItem("isLoggedIn") === "true"
+  );
+  const [role, setRole] = useState(sessionStorage.getItem("role"));
   const location = useLocation();
 
   const handleLogin = (userRole) => {
@@ -35,6 +38,9 @@ const AppRouter = () => {
     setRole(null);
     sessionStorage.removeItem("isLoggedIn");
     sessionStorage.removeItem("role");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("email");
+    toast.success("Logged out successfully");
   };
 
   const ProtectedOrdersRoute = () => {
@@ -53,8 +59,10 @@ const AppRouter = () => {
       <Header
         onLogout={handleLogout}
         isLoggedIn={isLoggedIn}
+        role={role}
         showBanner={location.pathname === "/"}
       />
+      <Toaster position="top-right" />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/products" element={<ProductDetail />} />
